@@ -1,15 +1,18 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { connectDB } from "./config/db.js";
+
 // import adminRoutes from "./routes/adminRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { errorHandler } from "./middleware/errorMiddleware.js";
 import productRoutes from "./routes/productMenuRoutes.js";
+import { testConnection } from "./config/supabase.js";
+
 
 
 dotenv.config();
-connectDB();
+
+testConnection();
 
 const app = express();
 app.use(cors({ origin: true, credentials: true }));
