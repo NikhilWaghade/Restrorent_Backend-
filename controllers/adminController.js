@@ -1,8 +1,7 @@
-
 import bcrypt from "bcryptjs";
 import supabase from "../config/supabase.js";
 
-// Admin Signup
+
 export const adminSignup = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -11,29 +10,36 @@ export const adminSignup = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Check if admin exists
-    const { data: existingAdmin, error: checkError } = await supabase
+    // 1️⃣ Check if admin already exists
+    const { data: existingAdmin, error: fetchError } = await supabase
       .from("admins")
       .select("*")
       .eq("email", email)
-      .single();
+      .maybeSingle(); // ✅ returns null if not found
 
-    if (checkError && checkError.code !== "PGRST116") throw checkError; // ignore "not found"
+    if (fetchError) {
+      console.error("Error checking admin:", fetchError.message);
+      return res.status(500).json({ message: "Error checking admin" });
+    }
+
     if (existingAdmin) {
       return res.status(400).json({ message: "Admin already exists" });
     }
 
-    // Hash password
+    // 2️⃣ Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Insert new admin
+    // 3️⃣ Insert new admin
     const { data: newAdmin, error: insertError } = await supabase
       .from("admins")
       .insert([{ name, email, password: hashedPassword }])
-      .select()
-      .single();
+      .select("*")
+      .maybeSingle();
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.error("Insert Error:", insertError.message);
+      return res.status(500).json({ message: "Error inserting admin" });
+    }
 
     res.status(201).json({
       id: newAdmin.id,
@@ -47,7 +53,7 @@ export const adminSignup = async (req, res) => {
   }
 };
 
-// Admin Login
+// ✅ Admin Login
 export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -56,18 +62,18 @@ export const adminLogin = async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
     }
 
-    // Find admin by email
-    const { data: admin, error } = await supabase
+    // 1️⃣ Find admin by email
+    const { data: admin, error: fetchError } = await supabase
       .from("admins")
       .select("*")
       .eq("email", email)
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (fetchError || !admin) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    // Compare password
+    // 2️⃣ Compare password
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid email or password" });

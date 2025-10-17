@@ -1,45 +1,55 @@
 import mongoose from 'mongoose';
 
-const reviewSchema = new mongoose.Schema({
-  user: {
-    type: String,
-    required: true,
+// ✅ Review Schema
+const reviewSchema = new mongoose.Schema(
+  {
+    user: {          // Supabase backend me 'user_name' ke saath match kare
+      type: String,
+      required: true,
+    },
+    rating: {
+      type: Number,
+      required: true,
+      min: 1,
+      max: 5,
+    },
+    comment: {
+      type: String,
+      required: true,
+    },
   },
-  rating: {
-    type: Number,
-    required: true,
-    min: 1,
-    max: 5,
-  },
-  comment: {
-    type: String,
-    required: true,
-  },
-}, { timestamps: true });
+  { timestamps: true } // createdAt, updatedAt automatically add hote hain
+);
 
-const productMenuSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
+// ✅ Product Schema
+const productSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    description: {
+      type: String,
+      required: true,
+    },
+    price: {
+      type: Number,
+      required: true,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    image_url: {        // ✅ Use consistent image_url key
+      type: String,
+      required: true,
+    },
+    reviews: [reviewSchema], // Embed reviewSchema
   },
-  description: {
-    type: String,
-    required: true,
-  },
-  price: {
-    type: Number,
-    required: true,
-  },
-  category: {
-    type: String,
-    required: true,
-  },
-  imageUrl: {
-    type: String,
-    required: true,
-  },
-  reviews: [reviewSchema], // ⬅️ Embed reviewSchema here
-}, { timestamps: true });
+  { timestamps: true }
+);
 
-const ProductMenu = mongoose.model('ProductMenu', productMenuSchema);
-export default ProductMenu;
+// ✅ Model
+const Product = mongoose.model('Product', productSchema);
+
+export default Product;

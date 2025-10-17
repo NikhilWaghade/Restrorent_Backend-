@@ -1,137 +1,127 @@
-import supabase from "../config/supabase.js";
+import { supabase } from "../config/supabase.js";
 
-// Create a new product
+// ✅ Create Product
 export const createProduct = async (req, res) => {
   try {
-    const { name, description, price, category, imageUrl } = req.body;
+    const { name, description, price, category, image_url } = req.body;
 
-    if (!name || !description || !price || !category || !imageUrl) {
+    if (!name || !description || !price || !category || !image_url) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
     const { data, error } = await supabase
       .from("products")
-      .insert([{ name, description, price, category, image_url: imageUrl }])
+      .insert([
+        {
+          name,
+          description,
+          price,
+          category,
+          image_url,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ])
       .select()
       .single();
 
     if (error) throw error;
 
-    res.status(201).json(data);
+    res.status(201).json({ message: "Product created successfully", product: data });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Create Product Error:", error);
+    res.status(500).json({ message: "Failed to create product", error: error.message });
   }
 };
 
-// Get all products
+// ✅ Get All Products
 export const getAllProducts = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("products")
-      .select(`
-        *,
-        reviews (*)
-      `);
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (error) throw error;
 
-    res.json(data);
+    res.status(200).json(data);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Fetch Products Error:", error);
+    res.status(500).json({ message: "Failed to fetch products", error: error.message });
   }
 };
 
-// Get product by ID
+// ✅ Get Product by ID
 export const getProductById = async (req, res) => {
   const { id } = req.params;
   try {
     const { data, error } = await supabase
       .from("products")
-      .select(`
-        *,
-        reviews (*)
-      `)
+      .select("*")
       .eq("id", id)
       .single();
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        return res.status(404).json({ message: "Product not found" });
-      }
-      throw error;
-    }
-
-    res.json(data);
+    if (error) throw error;
+    res.status(200).json(data);
   } catch (error) {
-    console.error("Error fetching product:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Get Product Error:", error);
+    res.status(500).json({ message: "Failed to get product", error: error.message });
   }
 };
 
-// Update product
+// ✅ Update Product
 export const updateProduct = async (req, res) => {
   const { id } = req.params;
-  const { name, description, price, category, imageUrl } = req.body;
+  const { name, description, price, category, image_url } = req.body;
 
   try {
     const { data, error } = await supabase
       .from("products")
-      .update({
-        name,
-        description,
-        price,
-        category,
-        image_url: imageUrl,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ name, description, price, category, image_url, updated_at: new Date().toISOString() })
       .eq("id", id)
       .select()
       .single();
 
     if (error) throw error;
-
-    res.json(data);
+    res.status(200).json({ message: "Product updated successfully", product: data });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Update Product Error:", error);
+    res.status(500).json({ message: "Failed to update product", error: error.message });
   }
 };
 
-// Delete product
+// ✅ Delete Product
 export const deleteProduct = async (req, res) => {
   const { id } = req.params;
-
   try {
-    // Delete product first, reviews are cascade deleted in SQL if set
     const { error } = await supabase.from("products").delete().eq("id", id);
-
     if (error) throw error;
 
-    res.json({ message: "Product deleted successfully" });
+    res.status(200).json({ message: "Product deleted successfully" });
   } catch (error) {
-    res.status(400).json({ error: error.message });
+    console.error("Delete Product Error:", error);
+    res.status(500).json({ message: "Failed to delete product", error: error.message });
   }
 };
 
-// Add review to a product
-export const addReviewToMenu = async (req, res) => {
-  const { id } = req.params; // product ID
+// ✅ Add Review to Product
+export const addReviewToProduct = async (req, res) => {
+  const { id } = req.params; // Product ID
   const { user, rating, comment } = req.body;
 
   if (!user || !rating || !comment) {
-    return res.status(400).json({ message: "Please provide user, rating, and comment." });
+    return res.status(400).json({ message: "User, rating, and comment are required" });
   }
 
   try {
     // Check if product exists
     const { data: product, error: productError } = await supabase
       .from("products")
-      .select("*")
+      .select("id")
       .eq("id", id)
       .single();
 
-    if (productError) {
-      return res.status(404).json({ message: "Product not found" });
-    }
+    if (productError || !product) return res.status(404).json({ message: "Product not found" });
 
     // Insert review
     const { data: review, error: reviewError } = await supabase
@@ -139,9 +129,10 @@ export const addReviewToMenu = async (req, res) => {
       .insert([
         {
           product_id: id,
-          user_name: user,
+          user: user,
           rating,
           comment,
+          created_at: new Date().toISOString(),
         },
       ])
       .select()
@@ -151,7 +142,6 @@ export const addReviewToMenu = async (req, res) => {
 
     res.status(201).json({ message: "Review added successfully", review });
   } catch (error) {
-    console.error("Error adding review:", error);
-    res.status(500).json({ message: "Server error while adding review" });
+    res.status(500).json({ message: "Error adding review", error: error.message });
   }
 };

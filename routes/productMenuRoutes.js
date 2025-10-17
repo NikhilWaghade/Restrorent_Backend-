@@ -1,20 +1,31 @@
-import express from 'express';
+import express from "express";
 import {
   createProduct,
   getAllProducts,
+  getProductById,
   updateProduct,
   deleteProduct,
-  addReviewToMenu,
-  getProductById,
-} from '../controllers/productMenuController.js';
+  addReviewToProduct,
+} from "../controllers/productMenuController.js";
 
 const router = express.Router();
 
-router.post('/', createProduct);
-router.get('/', getAllProducts);
-router.get('/:id', getProductById); 
-router.put('/:id', updateProduct);
-router.delete('/:id', deleteProduct);
-router.post('/:id/reviews', addReviewToMenu);
+// ✅ Create a new product
+router.post("/", createProduct);
+
+// ✅ Get all products
+router.get("/", getAllProducts);
+
+// ✅ Get a single product by ID
+router.get("/:id", getProductById);
+
+// ✅ Update product by ID
+router.put("/:id", updateProduct);
+
+// ✅ Delete product by ID
+router.delete("/:id", deleteProduct);
+
+// ✅ Add review to a product
+router.post("/:id/reviews", addReviewToProduct);
 
 export default router;
